@@ -10,7 +10,7 @@
 using namespace std;
 using namespace cv;
 
-void createHist(Mat img, Mat imgHist);
+void createHist(Mat img, Mat imgHist, const double fixedHistMax);
 void toneCurve(Mat inImg, int height, int width, double coeff, Mat outImg);
 void effectLinear(Mat inImg, int height, int width, double a, double b, Mat outImg);
 void effectNega(Mat inImg, int height, int width, Mat outImg);
@@ -28,12 +28,12 @@ int main()
 
     // 折れ線トーンカーブ
     double coeff = 2;
-    // toneCurve(img, height, width, coeff, outImg);
+    //toneCurve(img, height, width, coeff, outImg);
 
     // 線形変換
     double a = 1.;  // コントラストが変わる
-    double b = 0;   // 明るさが変わる
-    //effectLinear(img, height, width, a, b, outImg);
+    double b = 50;  // 明るさが変わる
+    effectLinear(img, height, width, a, b, outImg);
 
     // ガンマ補正
     double gammaVal = 0.7;
@@ -45,14 +45,15 @@ int main()
     //effectSigmoid(img, height, width, k, x0, outImg);
 
     // ヒストグラム均等化
-    histEqualization(img, height, width, outImg);
+    //histEqualization(img, height, width, outImg);
 
     // ネガポジ反転
     //effectNega(img, height, width, outImg);
 
     // ヒストグラム作成
-    Mat imgHist = Mat{512, 1024, CV_8UC3, Scalar(0, 0, 0)};
-    createHist(outImg, imgHist);
+    Mat    imgHist      = Mat{512, 1024, CV_8UC3, Scalar(0, 0, 0)};
+    double fixedHistMax = 3000;
+    createHist(outImg, imgHist, fixedHistMax);
 
     // 画像表示処理
     namedWindow("img", WINDOW_AUTOSIZE);
@@ -69,12 +70,13 @@ int main()
  * void createHist(Mat img, Mat imgHist))
  * Mat img : 入力画像
  * Mat imgHist : ヒストグラム画像
- *
+ * double fixedHistMax : ヒストグラムの最大値 (デフォルト: 512*512=262144)
+ *                       画像によっては262144だと見づらいので適宜変更
  * 機能 : ヒストグラムを作成
  *
  * return : void
  *************************************************/
-void createHist(Mat img, Mat imgHist)
+void createHist(Mat img, Mat imgHist, const double fixedHistMax = 262144)
 {
     // グレースケールに変換
     Mat grayImg;
@@ -88,10 +90,6 @@ void createHist(Mat img, Mat imgHist)
     Mat hist;
     calcHist(&grayImg, 1, 0, Mat(), hist, 1, hdims, ranges);
 
-    // 度数の最大値を取得
-    double histMin, histMax;
-    minMaxLoc(hist, &histMin, &histMax);
-
     // 背景を白に設定
     imgHist.setTo(Scalar(255, 255, 255));
 
@@ -101,7 +99,7 @@ void createHist(Mat img, Mat imgHist)
     // ヒストグラムの縦軸メモリを描画
     for (int y = 0; y <= 5; y++) {
         int posY  = imgHist.rows - margin - y * (imgHist.rows - 2 * margin) / 5;
-        int value = static_cast<int>(histMax * y / 5);
+        int value = static_cast<int>(fixedHistMax * y / 5);  // 固定された最大値を使用
         line(imgHist, Point(margin, posY), Point(margin - 5, posY), Scalar(0, 0, 0));  // 縦軸目盛り線
         putText(imgHist, std::to_string(value), Point(5, posY + 5), FONT_HERSHEY_SIMPLEX, 0.4,
                 Scalar(0, 0, 0));  // 値を描画
@@ -118,10 +116,11 @@ void createHist(Mat img, Mat imgHist)
                 Scalar(0, 0, 0));  // 値を描画
     }
 
-    // ヒストグラムを描画
+    //// ヒストグラムを描画
     for (int i = 0; i < 256; i++) {
         int v         = saturate_cast<int>(hist.at<float>(i));
-        int binHeight = (imgHist.rows - 2 * margin) * v / histMax;
+        int binHeight = (imgHist.rows - 2 * margin) * v / fixedHistMax;  // 固定された最大値を使用
+        binHeight     = std::min(binHeight, imgHist.rows - 2 * margin);  // オーバーフロー防止
         line(imgHist, Point(margin + i * (imgHist.cols - 2 * margin) / 256, imgHist.rows - margin),
              Point(margin + i * (imgHist.cols - 2 * margin) / 256, imgHist.rows - margin - binHeight), Scalar(0, 0, 0));
     }
