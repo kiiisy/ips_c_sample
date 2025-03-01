@@ -1,3 +1,4 @@
+#include "filter/filter.h"
 #include "pixelwise/pixelwise.h"
 #include <cstdint>
 #include <iostream>
@@ -23,6 +24,10 @@ int32_t main()
     // 濃淡処理
     pixelwise::ImageProcessor ips;
     pixelwise::IpsType ipsType = pixelwise::IpsType::None;
+
+    // フィルタ処理
+    filter::ImageProcessor ips2;
+    filter::IpsType ipsType2 = filter::IpsType::EmbossingFilter;
 
     double coeff, a, b, gammaVal, k, x0;
     int32_t filterCoeff;
@@ -64,15 +69,55 @@ int32_t main()
         break;
     }
 
-    // 処理がない場合入力画像をそのまま出力
-    if (ipsType == pixelwise::IpsType::None)
+    switch (ipsType2)
+    {
+    case filter::IpsType::EqualizationFilter:
+        filterCoeff = 2;
+        ips2.equalizationFilter(img, height, width, filterCoeff, outImg);
+        ipsName = "EqualizationFilter";
+        break;
+    case filter::IpsType::WeightedAverage:
+        ips2.weightedAverageFilter(img, height, width, outImg);
+        ipsName = "WeightedAverage";
+        break;
+    case filter::IpsType::SharpeningFilter:
+        ips2.sharpeningFilter(img, height, width, outImg);
+        ipsName = "SharpeningFilter";
+        break;
+    case filter::IpsType::EdgeDetectionFilter:
+        ips2.edgeDetectionFilter(img, height, width, outImg);
+        ipsName = "EdgeDetectionFilter";
+        break;
+    case filter::IpsType::SobelFilter:
+        ips2.sobelFilter(img, height, width, outImg);
+        ipsName = "SobelFilter";
+        break;
+    case filter::IpsType::PrewittFilter:
+        ips2.prewittFilter(img, height, width, outImg);
+        ipsName = "PrewittFilter";
+        break;
+    case filter::IpsType::RobertsFilter:
+        ips2.robertsFilter(img, height, width, outImg);
+        ipsName = "RobertsFilter";
+        break;
+    case filter::IpsType::EmbossingFilter:
+        ips2.embossingFilter(img, height, width, outImg);
+        ipsName = "EmbossingFilter";
+        break;
+    default:
+        // 何もしない
+        break;
+    }
+
+    // どちらも処理がない場合入力画像をそのまま出力
+    if (ipsType == pixelwise::IpsType::None && ipsType2 == filter::IpsType::None)
     {
         outImg = img;
     }
 
     // ヒストグラム作成
     Mat imgHist = Mat{512, 1024, CV_8UC3, Scalar(0, 0, 0)};
-    double fixedHistMax = 3000; // 20000
+    double fixedHistMax = 17000; // 20000
     createHist(outImg, imgHist, fixedHistMax);
 
     // 画像表示処理
