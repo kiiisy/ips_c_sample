@@ -19,6 +19,7 @@ enum class IpsType
     PrewittFilter       = 5,
     RobertsFilter       = 6,
     EmbossingFilter     = 7,
+    MedianFilter        = 8,
     None                = 99
 };
 
@@ -33,6 +34,7 @@ public:
     void prewittFilter(Mat inImg, int32_t height, int32_t width, Mat outImg);
     void robertsFilter(Mat inImg, int32_t height, int32_t width, Mat outImg);
     void embossingFilter(Mat inImg, int32_t height, int32_t width, Mat outImg);
+    void medianFilter(Mat inImg, int32_t height, int32_t width, Mat outImg);
 };
 
 }  // namespace filter

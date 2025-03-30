@@ -485,4 +485,50 @@ void ImageProcessor::embossingFilter(Mat inImg, int32_t height, int32_t width, M
     }
 }
 
+/*************************************************
+ * void medianFilter(Mat inImg, int32_t height, int32_t width, Mat outImg)
+ * Mat inImg : 入力画像
+ * int32_t height : 高さ
+ * int32_t width : 横幅
+ * Mat outImg : 出力画像
+ *
+ * 機能 : メディアンフィルタ処理
+ *
+ * return : void
+ *************************************************/
+void ImageProcessor::medianFilter(Mat inImg, int32_t height, int32_t width, Mat outImg)
+{
+    int32_t filterSize = 3;
+    int32_t red[9], green[9], blue[9];
+
+    for (int32_t y = 0; y < height; y++) {
+        for (int32_t x = 0; x < width; x++) {
+            // 3x3のフィルタ処理(-1から1までの範囲)
+            int32_t idx = 0;
+            for (int32_t yy = -1; yy <= 1; yy++) {
+                for (int32_t xx = -1; xx <= 1; xx++) {
+                    // 画像の端の処理 (リピート)
+                    int32_t replicateY = std::clamp(y + yy, 0, height - 1);
+                    int32_t replicateX = std::clamp(x + xx, 0, width - 1);
+
+                    // 画素取得
+                    Vec3b &pix = inImg.at<Vec3b>(replicateY, replicateX);
+
+                    red[idx]   = pix[RED];
+                    green[idx] = pix[GREEN];
+                    blue[idx]  = pix[BLUE];
+                    idx++;
+                }
+            }
+            // 画素値のソート
+            std::sort(red, red + filterSize * filterSize);
+            std::sort(green, green + filterSize * filterSize);
+            std::sort(blue, blue + filterSize * filterSize);
+
+            // 画素の書き込み
+            outImg.at<Vec3b>(y, x) = Vec3b(blue[4], green[4], red[4]);
+        }
+    }
+}
+
 }  // namespace filter
